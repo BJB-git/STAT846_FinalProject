@@ -4,6 +4,7 @@ library(class)
 library(gmodels)
 library(ggplot2)
 
+
 #### Liver Disease Data Set ####
 
 LiverData <- read.csv("bupa.data")
@@ -224,5 +225,106 @@ ggplot(BCTwoPredictorPlotData, aes(x=Age, y=BMI, color = knn.pred.best, size = 3
 
 
 
+
+
+
+
+#### HIV Testing ####
+library(MTPS)
+data(HIV)
+
+View(XX)
+View(YY)
+
+HIVData <- XX
+
+yBin <- as.matrix(YY)
+cutoffs <- c(2,3,3,1.5,1.5) # cutoff value to be used to define drug resistance
+for(ii in 1:5) yBin[,ii] <- (10^yBin[,ii] < cutoffs[ii])*1
+View(yBin)
+
+#Pick the first outcome
+
+HIVData$outcome <- factor(yBin[,1])
+
+
+#Convert "drinks" to categorical. This is our response variable.
+BCData$Classification <- factor(BCData$Classification)
+
+#Normalize the predictors
+BCData[,1:9] <- scale(BCData[,1:9])
+
+summary(BCData)
+
+
+set.seed(2021)
+trainIndex <- createDataPartition(BCData$Classification, p = .75, 
+                                  list = FALSE, 
+                                  times = 1)
+
+mytrain <- BCData[trainIndex, ]
+mytest <- BCData[-trainIndex, ]
+train.X <- BCData[trainIndex, c(1:9)]
+test.X <- BCData[-trainIndex, c(1:9)]
+train.label <- BCData[trainIndex, 10]
+test.label <- BCData[-trainIndex, 10]
+
+
+CorrectPredictions <- c()
+
+
+for (ii in 1:nrow(train.X)){
+  
+  set.seed(ii)
+  
+  knn.pred <- knn(train.X, test.X, train.label, k = ii)
+  
+  CorrectPredictions <- c(CorrectPredictions, sum(as.integer(test.label==knn.pred)) / length(test.label==knn.pred))
+}
+
+
+max(CorrectPredictions)
+BestK <- which(CorrectPredictions == max(CorrectPredictions))
+BestK
+plot(CorrectPredictions, type = "l")
+
+
+
+
+# Calculate average run time
+# May want to test on a larger data set - this one is very quick
+
+TimeMatrix <- matrix(NA, nrow = 100, ncol = nrow(train.X))
+
+for (k in 1:nrow(train.X)) {
+  
+  TimeList <- c()
+  
+  for (ii in 1:100) {
+    start_time <- Sys.time()
+    knn(train.X, test.X, train.label, k = 40)
+    end_time <- Sys.time()
+    NewTime <- end_time - start_time
+    
+    TimeMatrix[ii,k] <- NewTime
+  }
+}
+
+MeanForEachK <- colMeans(TimeMatrix)
+
+barplot(MeanForEachK)
+
+mean(MeanForEachK)
+MeanForEachK[BestK]
+
+#Plot with only two predictors
+
+knn.pred.best <- knn(train.X, test.X, train.label, k = BestK)
+
+BCTwoPredictorPlotData <- cbind(test.X, knn.pred.best)
+
+ggplot(BCTwoPredictorPlotData, aes(x=Age, y=BMI, color = knn.pred.best, size = 3)) + 
+  geom_point() +
+  theme_minimal()
 
 
