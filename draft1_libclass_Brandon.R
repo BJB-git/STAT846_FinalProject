@@ -43,35 +43,9 @@ library(caret)
 #Documentation is hard to find - hard to use
 #One site says data needs to be pre-processed
 #May have built-in processing options
-
-data.train.X.scaled <- scale(data.train.X)
-data.test.X.scaled <- scale(data.test.X)
-
-data.train.combined.scaled <- cbind(data.train.X.scaled, data.train.Y)
-#data.train.combined.scaled[,ncol(data.train.combined.scaled)] <- factor(data.train.combined.scaled[,ncol(data.train.combined.scaled)])
-
-data.train.combined.dataframe <- data.frame(data.train.combined.scaled)
-data.train.combined.dataframe$data.train.Y <- factor(data.train.combined.dataframe$data.train.Y)
-names(data.train.combined.dataframe)[length(data.train.combined.dataframe)] <- "YData"
-
-cM = list()
-runTime = list()
-
-ctrl <- trainControl(method="repeatedcv",repeats = 3)
-CaretFit <- train(YData ~ ., data = data.train.combined.dataframe, method = "knn", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
-plot(CaretFit)
-
-data.test.combined.scaled <- cbind(data.test.X.scaled, data.test.Y)
-data.test.combined.dataframe <- data.frame(data.test.combined.scaled)
-#data.test.combined.dataframe$data.test.Y <- factor(data.test.combined.dataframe$data.test.Y)  
-names(data.test.combined.dataframe)[length(data.test.combined.dataframe)] <- "YData"
-
-predict(CaretFit, newdata = data.test.combined.dataframe)
-CaretPredictions <- predict(CaretFit, newdata = data.test.combined.dataframe)
-
-
-
-train.id
+#Needs to be in a single data frame
+#Pre-processing may need to be be done before splitting the data into training/test sets. I got errors when I didn't follow that order
+#Automatically tries different k values. However, it is somewhat confusing to specify a specific k
 
 XX.scaled <- scale(XX)
 data.combined <- cbind(XX, yy)
@@ -86,20 +60,37 @@ CaretFit <- train(yy ~ ., data = data.combined.scaled.df.train, method = "knn", 
 plot(CaretFit)
 
 predict(CaretFit, newdata = data.combined.scaled.df.test)
+CaretPredictions <- predict(CaretFit, newdata = data.test.combined.dataframe)
 
-
-
-
+cM = list()
+runTime = list()
 
 for(kk in 1:100){
-  runTime[[kk]] = system.time(
-    model <- knn(data.train.X.scaled,data.test.X.scaled, data.train.Y, k=kk )
+  ctrl <- trainControl(method="repeatedcv",repeats = 3)
+  
+  runTime1 = system.time(
+    model <- train(yy ~ ., data = data.combined.scaled.df.train, method = "knn",
+                   tuneGrid=data.frame(k= kk), trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
   )
-  cM[[kk]] = table(actual=data.test.Y, predicted = model)
+  
+  runTime2 = system.time(
+    model_predictions <- predict(model, newdata = data.combined.scaled.df.test)
+  )
+  
+  runTime[[kk]] <- runTime1 + runTime2
+  
+  cM[[kk]] = table(actual=data.combined.scaled.df.test$yy, predicted = model_predictions)
 }
 
-libclass = list(lib = "class", cM = cM, runTime = runTime)
-save(libclass, file = "libclass.RData")
+libcaret = list(lib = "caret", cM = cM, runTime = runTime)
+save(libcaret, file = "libcaret.RData")
+
+plotperformance(libcaret, accuracy, "Accuracy")
+Reduce("+", libcaret$runTime) 
+plot(1:100,unlist(runTime)[names(unlist(runTime))=="elapsed"], 
+     ylab = "Run Time", xlab="k", type = "b")
+
+
 
 ##### library: Rfast ####
 library(Rfast)
@@ -136,6 +127,10 @@ plotperformance(libRfast, accuracy, "Accuracy")
 Reduce("+", libRfast$runTime) 
 plot(1:100,unlist(runTime)[names(unlist(runTime))=="elapsed"], 
      ylab = "Run Time", xlab="k", type = "b")
+
+
+
+
 
 
 #performance
