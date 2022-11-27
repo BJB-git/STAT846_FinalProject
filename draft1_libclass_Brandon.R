@@ -3,12 +3,12 @@ library(MTPS)
 
 #loading data
 data(HIV)
-View(XX)
-View(YY)
+#View(XX)
+#View(YY)
 yBin <- as.matrix(YY)
 cutoffs <- c(2,3,3,1.5,1.5) # cutoff value to be used to define drug resistance
 for(ii in 1:5) yBin[,ii] <- (10^yBin[,ii] < cutoffs[ii])*1
-View(yBin)
+#View(yBin)
 yy = yBin[,1]
 #split data into training and test
 set.seed(0)
@@ -46,17 +46,18 @@ library(caret)
 #Needs to be in a single data frame
 #Pre-processing may need to be be done before splitting the data into training/test sets. I got errors when I didn't follow that order
 #Automatically tries different k values. However, it is somewhat confusing to specify a specific k
+#I think that this package is just calling the knn3 code, which is the same code used in the class package. However, caret provides different syntax
+#Unlike the base package, you need to manually call the predict function, which adds a step and isn't as convinient as the base package
+
+#Having trouble getting the outputs to match the class package. Suggest setting a consistent random seed for each k value
 
 XX.scaled <- scale(XX)
 data.combined <- cbind(XX, yy)
 data.combined.scaled.df <- data.frame(data.combined)
 data.combined.scaled.df$yy <- factor(data.combined.scaled.df$yy)
 
-data.combined.scaled.df.train <- data.combined.scaled.df[train.id,]
-data.combined.scaled.df.test <- data.combined.scaled.df[-train.id,]
-
 ctrl <- trainControl(method="repeatedcv",repeats = 3)
-CaretFit <- train(yy ~ ., data = data.combined.scaled.df.train, method = "knn", trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
+CaretFit <- train(yy ~ ., data = data.combined.scaled.df.train, method = "knn", trControl = ctrl, preProcess = c("center","scale"))
 plot(CaretFit)
 
 predict(CaretFit, newdata = data.combined.scaled.df.test)
@@ -70,7 +71,7 @@ for(kk in 1:100){
   
   runTime1 = system.time(
     model <- train(yy ~ ., data = data.combined.scaled.df.train, method = "knn",
-                   tuneGrid=data.frame(k= kk), trControl = ctrl, preProcess = c("center","scale"), tuneLength = 20)
+                   tuneGrid=data.frame(k= kk), trControl = ctrl, preProcess = c("center","scale"))
   )
   
   runTime2 = system.time(
@@ -95,9 +96,11 @@ plot(1:100,unlist(runTime)[names(unlist(runTime))=="elapsed"],
 ##### library: Rfast ####
 library(Rfast)
 
-#Confusing documentation
-#Needs inputs to be matrices, which is annoying 
-#Some of the arugments are nice
+#Confusing documentation - English is poor. Takes a bit of effort to learn which arguments are the training vs. test data
+#Can specify if you want to use euclidian or manhattan distances. Doesn't automatically compare them though. In our case these returned identical results. However, there is a paper that suggest this might be useful in some applications: https://bib.dbvis.de/uploadedFiles/155.pdf
+#For ties, you can specify if you want to break them at random or if you want to select the first class that reached the given number of neighbors. This is very nice for reproducability
+#Has a low memory option that slows it down but reduces how much memory your computer needs - can be good for large cases
+#Needs inputs to be matrices, which is annoying (format is very specific)
 
 # data.train.X.scaled <- scale(data.train.X)
 # data.test.X.scaled <- scale(data.test.X)
@@ -119,6 +122,15 @@ for(kk in 1:100){
   )
   cM[[kk]] = table(actual=data.test.Y, predicted = model)
 }
+
+#Using Manhattan distances
+# for(kk in 1:100){
+#   runTime[[kk]] = system.time(
+#     model <- knn(xnew = data.test.X.matrix, y = data.train.Y.matrix, x = data.train.X.matrix, k = kk, dist.type = "manhattan", type = "C", method = "average",
+#                  freq.option = 0, mem.eff = FALSE)
+#   )
+#   cM[[kk]] = table(actual=data.test.Y, predicted = model)
+# }
 
 libRfast = list(lib = "Rfast", cM = cM, runTime = runTime)
 save(libRfast, file = "libRfast.RData")
@@ -152,3 +164,17 @@ plotperformance(libclass, accuracy, "Accuracy")
 Reduce("+", libclass$runTime) 
 plot(1:100,unlist(runTime)[names(unlist(runTime))=="elapsed"], 
      ylab = "Run Time", xlab="k", type = "b")
+
+
+
+library(parsnip)
+
+
+
+
+
+
+
+
+
+
