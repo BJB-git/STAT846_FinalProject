@@ -14,18 +14,35 @@ The sample size is 1246.
 The outcome is Resistance information of 5 drugs in the NRTI class. 
 
 In this data set, there are 228 mutations of each isolate/virus and five predictors that represent five different drugs. 
-These drugs are Lamivudine (3TC), Abacavir (ABC), Zidovudine (AZT), Stavudine (D4T) and Didanosine (DDI). 
-These response variables have been changed to binary variables using specified cut-off values suggested by biologists.   
+These drugs are:
+  * Lamivudine (3TC)
+  * Abacavir (ABC)
+  * Zidovudine (AZT)
+  * Stavudine (D4T)
+  * Didanosine (DDI)
+ 
+These response variables have been changed to binary variables using specified cut-off values suggested by biologists.
+
+We used only the drug Abacavir (ABC) for our purpose here.
+
+These data sets are accessible by package "MTPS". First, installing this package in R, as proposed in the R file, and then by using "data(HIV)" command this data will be uploaded in the R enviroment.
 
 
-# Overview of Evaluation Criteria 
+## Overview of Evaluation Criteria 
 
 Each KNN function is evaluated based on the following criteria: 
 * Prediction accuracy 
-Algorithm robustness 
-Runtime (speed)/computational efficiency  
-Ease of use 
-Other features of the functions (output options, built-in data processing, missing data handling, etc.) 
-Say about Dataset in MTPS Package in R.
+* Algorithm robustness 
+* Runtime (speed)/computational efficiency  
+* Ease of use 
+* Other features of the functions (output options, built-in data processing, missing data handling, etc.) 
 
-explain the folders created and RData.
+## Folders
+
+There are 3 folders here containing our projects.
+
+Under folder Final_R, the R code is stored.
+
+Under plots folder, the plots for the reports are saved.
+
+Under Saved_RData_Files, the outputs of each packages (Confusion Matrices) are saved.
